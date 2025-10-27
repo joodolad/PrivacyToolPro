@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>🔐 FHE Adder</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        min-height: 100vh;
+        background: #0f0c29;
+        color: #fff;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      /* Advanced FHE Background */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 30%, #24243e 60%, #1a1a2e 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 20s ease infinite;
+        z-index: -4;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+          /* Circuit grid pattern */
+          linear-gradient(90deg, rgba(94, 234, 212, 0.03) 1px, transparent 1px),
+          linear-gradient(rgba(94, 234, 212, 0.03) 1px, transparent 1px),
+          /* Diagonal lines for tech feel */ linear-gradient(45deg, rgba(94, 234, 212, 0.02) 1px, transparent 1px),
+          linear-gradient(-45deg, rgba(94, 234, 212, 0.02) 1px, transparent 1px);
+        background-size:
+          60px 60px,
+          60px 60px,
+          40px 40px,
+          40px 40px;
+        background-position:
+          0 0,
+          0 0,
+          0 0,
+          0 0;
+        animation: circuitMove 30s linear infinite;
+        z-index: -3;
+      }
+
+      @keyframes gradientShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        25% {
+          background-position: 100% 50%;
+        }
+        50% {
+          background-position: 100% 100%;
+        }
+        75% {
+          background-position: 0% 100%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      @keyframes circuitMove {
+        0% {
+          background-position:
+            0 0,
+            0 0,
+            0 0,
+            0 0;
+        }
+        100% {
+          background-position:
+            60px 60px,
+            -60px -60px,
+            40px 40px,
+            -40px -40px;
+        }
+      }
+
+      /* FHE Watermark */
+      .fhe-watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: clamp(2rem, 8vw, 6rem);
+        font-weight: 900;
+        color: rgba(94, 234, 212, 0.04);
+        font-family: "Courier New", monospace;
+        letter-spacing: 0.5em;
+        text-transform: uppercase;
+        z-index: -2;
+        user-select: none;
+        pointer-events: none;
+        animation: watermarkPulse 10s ease-in-out infinite;
+      }
+
+      @keyframes watermarkPulse {
+        0%,
+        100% {
+          opacity: 0.04;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          opacity: 0.08;
+          transform: translate(-50%, -50%) scale(1.05);
+        }
+      }
+
+      /* Enhanced circuit nodes */
+      .circuit-nodes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .circuit-node {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(94, 234, 212, 0.3);
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(94, 234, 212, 0.5);
+        animation: nodeGlow 4s ease-in-out infinite;
+      }
+
+      @keyframes nodeGlow {
+        0%,
+        100% {
+          opacity: 0.3;
+          transform: scale(1);
+          box-shadow: 0 0 10px rgba(94, 234, 212, 0.5);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scale(1.5);
+          box-shadow: 0 0 20px rgba(94, 234, 212, 0.8);
+        }
+      }
+
+      /* Floating particles */
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: rgba(94, 234, 212, 0.4);
+        border-radius: 50%;
+        animation: float 20s linear infinite;
+        box-shadow: 0 0 6px rgba(94, 234, 212, 0.6);
+      }
+
+      @keyframes float {
+        0% {
+          transform: translateY(100vh) rotate(0deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100px) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      .container {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 2rem;
+        position: relative;
+        z-index: 10;
+      }
+
+      .main-card {
+        background: rgba(15, 12, 41, 0.6);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(94, 234, 212, 0.2);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow:
+          0 25px 50px rgba(0, 0, 0, 0.4),
+          0 0 0 1px rgba(94, 234, 212, 0.1) inset,
+          0 1px 0 rgba(94, 234, 212, 0.15) inset;
+        position: relative;
+        overflow: hidden;
+        animation: cardGlow 3s ease-in-out infinite alternate;
+      }
+
+      @keyframes cardGlow {
+        0% {
+          box-shadow:
+            0 25px 50px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(94, 234, 212, 0.1) inset,
+            0 1px 0 rgba(94, 234, 212, 0.15) inset;
+        }
+        100% {
+          box-shadow:
+            0 25px 50px rgba(94, 234, 212, 0.3),
+            0 0 0 1px rgba(94, 234, 212, 0.25) inset,
+            0 1px 0 rgba(94, 234, 212, 0.3) inset;
+        }
+      }
+
+      .main-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        animation: shimmer 3s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          left: -100%;
+        }
+        50% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, #fff 0%, #f0f0ff 50%, #e0e0ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        position: relative;
+      }
+
+      .encryption-icon {
+        display: inline-block;
+        animation: rotate 8s linear infinite;
+        margin-right: 0.5rem;
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .btn {
+        width: 100%;
+        padding: 1.2rem 2rem;
+        border: none;
+        border-radius: 16px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 0.8rem 0;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        backdrop-filter: blur(10px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #7c8ff0 0%, #8a5db8 100%);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(255, 107, 107, 0.4);
+        background: linear-gradient(135deg, #ff7979 0%, #fd6a3a 100%);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 210, 255, 0.3);
+      }
+
+      .btn-success:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 210, 255, 0.4);
+        background: linear-gradient(135deg, #1ee0ff 0%, #4c8bea 100%);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      .btn:hover:not(:disabled)::before {
+        left: 100%;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+      }
+
+      .input-wrapper {
+        flex: 1;
+        position: relative;
+      }
+
+      .input-wrapper label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 1.2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        font-size: 1.1rem;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        color: #fff;
+        transition: all 0.3s ease;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      input[type="number"]::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .status-section {
+        margin: 2rem 0;
+        text-align: center;
+      }
+
+      #status {
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #result {
+        margin-top: 1.5rem;
+        font-size: 1.4rem;
+        font-weight: 700;
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(58, 123, 213, 0.1) 100%);
+        border: 1px solid rgba(0, 210, 255, 0.3);
+        backdrop-filter: blur(10px);
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: resultPulse 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes resultPulse {
+        0% {
+          box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+        100% {
+          box-shadow: 0 0 40px rgba(0, 210, 255, 0.6);
+        }
+      }
+
+      .debug {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-top: 2rem;
+        font-family: "Fira Code", "Courier New", monospace;
+        font-size: 0.85rem;
+        max-height: 300px;
+        overflow-y: auto;
+        backdrop-filter: blur(10px);
+        color: #00ff88;
+        text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+      }
+
+      .debug::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .debug::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      .debug::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.6);
+        border-radius: 4px;
+      }
+
+      .debug::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.8);
+      }
+
+      /* Loading animation */
+      .loading {
+        position: relative;
+      }
+
+      .loading::after {
+        content: "";
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: translateY(-50%) rotate(0deg);
+        }
+        100% {
+          transform: translateY(-50%) rotate(360deg);
+        }
+      }
+
+      /* Encryption animation */
+      .encrypt-animation {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .encrypt-animation::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+        animation: encryptScan 2s ease-in-out infinite;
+      }
+
+      @keyframes encryptScan {
+        0% {
+          left: -100%;
+        }
+        50% {
+          left: 100%;
+        }
+        100% {
+          left: -100%;
+        }
+      }
+
+      /* Matrix rain effect for encryption */
+      .matrix-rain {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.1;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        color: #00ff88;
+        overflow: hidden;
+      }
+
+      .matrix-column {
+        position: absolute;
+        top: -100%;
+        animation: matrixFall 10s linear infinite;
+      }
+
+      @keyframes matrixFall {
+        to {
+          top: 100%;
+        }
+      }
+
+      /* Success animation */
+      .success-flash {
+        animation: successFlash 0.5s ease-in-out;
+      }
+
+      @keyframes successFlash {
+        0%,
+        100% {
+          background-color: transparent;
+        }
+        50% {
+          background-color: rgba(0, 255, 136, 0.1);
+        }
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 768px) {
+        .container {
+          margin: 1rem;
+          padding: 1rem;
+        }
+
+        .main-card {
+          padding: 2rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .input-group {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .btn {
+          font-size: 1rem;
+          padding: 1rem;
+        }
+      }
+
+      /* Hover effects for inputs */
+      .input-wrapper:hover input {
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+      }
+
+      /* Connect button special styling */
+      #connect {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background-size: 200% 200%;
+        animation: gradientShift 5s ease infinite;
+        font-size: 1.2rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+      }
+
+      #connect:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fhe-watermark">ZAMA FHEVM</div>
+    <div class="circuit-nodes" id="circuitNodes"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+      <div class="main-card">
+        <div class="matrix-rain" id="matrixRain"></div>
+
+        <h1><span class="encryption-icon">🔐</span>FHE Adder</h1>
+
+        <button id="connect" class="btn btn-primary">🔗 Connect MetaMask</button>
+
+        <div class="input-group">
+          <div class="input-wrapper">
+            <label>Number A:</label>
+            <input id="a" type="number" value="1" min="0" max="255" disabled />
+          </div>
+          <div class="input-wrapper">
+            <label>Number B:</label>
+            <input id="b" type="number" value="1" min="0" max="255" disabled />
+          </div>
+        </div>
+
+        <button id="add" class="btn btn-secondary" disabled>➕ Add Numbers</button>
+
+        <button id="getResult" class="btn btn-success" disabled>🔍 Show Result</button>
+
+        <div class="status-section">
+          <div id="status">Waiting for MetaMask connection...</div>
+          <div id="result"></div>
+        </div>
+
+        <div id="debug" class="debug"></div>
+      </div>
+    </div>
+
+    <script type="module" crossorigin src="https://cdn.zama.ai/relayer-sdk-js/0.1.2/relayer-sdk-js.js"></script>
+    <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm"></script>
+    <script type="module">
+      import { BrowserProvider, Contract, getAddress } from "https://cdn.jsdelivr.net/npm/ethers@6.15.0/+esm";
+      import {
+        initSDK,
+        createInstance,
+        SepoliaConfig,
+      } from "https://cdn.zama.ai/relayer-sdk-js/0.1.2/relayer-sdk-js.js";
+
+      // Initialize circuit nodes
+      function createCircuitNodes() {
+        const nodesContainer = document.getElementById("circuitNodes");
+        const nodeCount = 25;
+
+        for (let i = 0; i < nodeCount; i++) {
+          const node = document.createElement("div");
+          node.className = "circuit-node";
+          node.style.left = Math.random() * 100 + "%";
+          node.style.top = Math.random() * 100 + "%";
+          node.style.animationDelay = Math.random() * 4 + "s";
+          node.style.animationDuration = Math.random() * 2 + 3 + "s";
+          nodesContainer.appendChild(node);
+        }
+      }
+
+      // Initialize particles
+      function createParticles() {
+        const particlesContainer = document.getElementById("particles");
+        const particleCount = 40;
+
+        for (let i = 0; i < particleCount; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          particle.style.left = Math.random() * 100 + "%";
+          particle.style.animationDelay = Math.random() * 20 + "s";
+          particle.style.animationDuration = Math.random() * 10 + 15 + "s";
+          particlesContainer.appendChild(particle);
+        }
+      }
+
+      // Initialize matrix rain
+      function createMatrixRain() {
+        const matrixContainer = document.getElementById("matrixRain");
+        const chars = "01";
+        const columns = 20;
+
+        for (let i = 0; i < columns; i++) {
+          const column = document.createElement("div");
+          column.className = "matrix-column";
+          column.style.left = (i * 100) / columns + "%";
+          column.style.animationDelay = Math.random() * 10 + "s";
+
+          let text = "";
+          for (let j = 0; j < 20; j++) {
+            text += chars[Math.floor(Math.random() * chars.length)] + "<br>";
+          }
+          column.innerHTML = text;
+
+          matrixContainer.appendChild(column);
+        }
+      }
+
+      // Initialize visual effects
+      createCircuitNodes();
+      createParticles();
+      createMatrixRain();
+
+      const $ = (id) => document.getElementById(id);
+      const [connectBtn, addBtn, getResultBtn, aInput, bInput, status, result, debugDiv] = [
+        "connect",
+        "add",
+        "getResult",
+        "a",
+        "b",
+        "status",
+        "result",
+        "debug",
+      ].map($);
+
+      const CONTRACT_ADDRESS = "0x4dcF2502c67986a2EFCBc6558fd6b78BD9835e3c";
+      const KMS_ADDRESS = "0x1364cBBf2cDF5032C47d8226a6f6FBD2AFCDacAC";
+      const RELAYER_URL = "https://relayer.testnet.zama.cloud";
+
+      const adderAbi = [
+        {
+          inputs: [
+            { name: "hA", type: "bytes32" },
+            { name: "hB", type: "bytes32" },
+            { name: "proof", type: "bytes" },
+          ],
+          name: "add",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getLastResult",
+          outputs: [{ name: "", type: "bytes32" }],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
+      let provider, signer, user, relayer, adder;
+      let step = 0;
+
+      // Function to log messages to debug div and console
+      function log(msg) {
+        const message = `[${++step}] ${msg}`;
+        debugDiv.textContent += `${new Date().toLocaleTimeString()}: ${message}\n`;
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+        console.log(message);
+      }
+
+      // Function to convert Uint8Array to hex string
+      function toHex(u8arr) {
+        return Array.from(u8arr)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      // Add loading animation to button
+      function addLoadingAnimation(btn) {
+        btn.classList.add("loading");
+      }
+
+      function removeLoadingAnimation(btn) {
+        btn.classList.remove("loading");
+      }
+
+      // Add encryption animation
+      function addEncryptionAnimation(element) {
+        element.classList.add("encrypt-animation");
+        setTimeout(() => element.classList.remove("encrypt-animation"), 3000);
+      }
+
+      // Add success flash
+      function addSuccessFlash(element) {
+        element.classList.add("success-flash");
+        setTimeout(() => element.classList.remove("success-flash"), 500);
+      }
+
+      async function connectMetaMask() {
+        addLoadingAnimation(connectBtn);
+        log("Checking window.ethereum...");
+        log("typeof ethereum: " + typeof window.ethereum);
+        log("window.ethereum: " + (window.ethereum ? "available" : "null"));
+        if (!window.ethereum || typeof window.ethereum.request !== "function") {
+          status.textContent = "❌ MetaMask is not installed or does not support EIP-1193";
+          log("MetaMask not found or does not support EIP-1193");
+          removeLoadingAnimation(connectBtn);
+          return false;
+        }
+
+        try {
+          log("Creating BrowserProvider...");
+          provider = new BrowserProvider(window.ethereum);
+          log("provider object: " + (provider ? "BrowserProvider instance" : "null"));
+          if (!provider || typeof provider.send !== "function") {
+            throw new Error("Invalid provider: does not support EIP-1193");
+          }
+
+          await provider.send("eth_requestAccounts", []);
+          signer = await provider.getSigner();
+          user = await signer.getAddress();
+          const network = await provider.getNetwork();
+          if (network.chainId !== BigInt(11155111)) {
+            status.textContent = "❌ Please switch to Sepolia network";
+            log(`Incorrect network: ${network.chainId}. Sepolia (11155111) required`);
+            removeLoadingAnimation(connectBtn);
+            return false;
+          }
+          status.textContent = `✅ Connected: ${user.slice(0, 6)}...${user.slice(-4)}`;
+          log(`Connected account: ${user}`);
+          connectBtn.textContent = `🔗 Connected: ${user.slice(0, 6)}...${user.slice(-4)}`;
+          connectBtn.disabled = true;
+          aInput.disabled = false;
+          bInput.disabled = false;
+          addBtn.disabled = false;
+          getResultBtn.disabled = false;
+
+          addSuccessFlash(status);
+
+          // Initialize Relayer SDK
+          log("Initializing Relayer SDK...");
+          await initSDK();
+          log("Relayer SDK initialized");
+
+          const { generateKeypair } = await import("https://cdn.zama.ai/relayer-sdk-js/0.1.2/relayer-sdk-js.js");
+          const keypair = await generateKeypair();
+          log("Keys generated: publicKey=" + keypair.publicKey.toString("hex").slice(0, 10) + "...");
+
+          log("Checking window.ethereum before relayer...");
+          log("window.ethereum: " + (window.ethereum ? "available" : "null"));
+          if (!window.ethereum || typeof window.ethereum.request !== "function") {
+            throw new Error("window.ethereum is not available before creating relayer");
+          }
+          const relayerConfig = {
+            ...SepoliaConfig,
+            network: window.ethereum, // Use window.ethereum instead of provider
+            relayerUrl: RELAYER_URL,
+            user: {
+              publicKey: "0x" + keypair.publicKey.toString("hex"),
+              privateKey: "0x" + keypair.privateKey.toString("hex"),
+            },
+            debug: true,
+          };
+          log(
+            `Relayer config: aclContractAddress=${relayerConfig.aclContractAddress}, kmsContractAddress=${relayerConfig.kmsContractAddress}, chainId=${relayerConfig.chainId}, relayerUrl=${relayerConfig.relayerUrl}, user.publicKey=${relayerConfig.user.publicKey.slice(0, 10)}...`,
+          );
+
+          // Check KMS contract
+          try {
+            const code = await provider.getCode(KMS_ADDRESS);
+            if (code === "0x") {
+              throw new Error(`KMS contract not found at address: ${KMS_ADDRESS}`);
+            }
+            log(`KMS contract exists: ${KMS_ADDRESS}, code length: ${code.length} bytes`);
+          } catch (e) {
+            status.textContent = "❌ Error checking KMS contract";
+            log(`Error checking KMS contract: ${e.message}`);
+            removeLoadingAnimation(connectBtn);
+            return false;
+          }
+
+          log("Creating relayer...");
+          relayer = await createInstance(relayerConfig);
+          log("Relayer ready ✅");
+
+          log("Creating contract instance...");
+          adder = new Contract(CONTRACT_ADDRESS, adderAbi, signer);
+          log(`Contract initialized: ${CONTRACT_ADDRESS}`);
+
+          removeLoadingAnimation(connectBtn);
+          return true;
+        } catch (e) {
+          status.textContent = "❌ MetaMask connection error: " + e.message;
+          log(`MetaMask connection error: ${e.message}`);
+          console.error("Connection error:", e);
+          removeLoadingAnimation(connectBtn);
+          return false;
+        }
+      }
+
+      window.addEventListener("load", () => {
+        log("Page loaded, attaching handler to MetaMask button");
+        connectBtn.onclick = connectMetaMask;
+      });
+
+      addBtn.onclick = async () => {
+        if (!signer || !relayer || !adder) {
+          status.textContent = "❌ Connect MetaMask first";
+          log("MetaMask not connected");
+          return;
+        }
+
+        const a = +aInput.value;
+        const b = +bInput.value;
+        if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || a > 255 || b < 0 || b > 255) {
+          status.textContent = "❌ Numbers must be integers between 0 and 255";
+          log(`Invalid values: a=${a}, b=${b}`);
+          return;
+        }
+
+        addBtn.disabled = true;
+        getResultBtn.disabled = true;
+        result.textContent = "";
+        status.textContent = "⏳ Performing addition...";
+        step = 0;
+
+        addLoadingAnimation(addBtn);
+        addEncryptionAnimation(aInput);
+        addEncryptionAnimation(bInput);
+
+        try {
+          log(`input a=${a}, b=${b}`);
+          const buf = relayer.createEncryptedInput(CONTRACT_ADDRESS, user);
+          buf.add8(Number(a));
+          buf.add8(Number(b));
+          const { handles, inputProof } = await buf.encrypt();
+
+          const hA = "0x" + toHex(handles[0]);
+          const hB = "0x" + toHex(handles[1]);
+          const proof = "0x" + toHex(inputProof);
+
+          log(`handleA: ${hA}`);
+          log(`handleB: ${hB}`);
+          log(`proof: ${proof.slice(0, 62)}…`);
+
+          const tx = await adder.add(hA, hB, proof, { gasLimit: 3000000 });
+          log(`txHash: ${tx.hash}`);
+          await tx.wait();
+
+          const encHex = await adder.getLastResult();
+          log(`encSum (getLastResult): ${encHex}`);
+
+          const { generateKeypair } = await import("https://cdn.zama.ai/relayer-sdk-js/0.1.2/relayer-sdk-js.js");
+          const keypair = await generateKeypair();
+          const pairs = [{ handle: encHex, contractAddress: CONTRACT_ADDRESS }];
+
+          const startTs = Math.floor(Date.now() / 1000).toString();
+          const days = "7";
+          const eip712 = relayer.createEIP712(keypair.publicKey, [CONTRACT_ADDRESS], startTs, days);
+
+          log("Creating EIP-712 signature...");
+          const sig = await signer.signTypedData(
+            eip712.domain,
+            { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
+            eip712.message,
+          );
+          log("Signature created");
+
+          const out = await relayer.userDecrypt(
+            pairs,
+            keypair.privateKey,
+            keypair.publicKey,
+            sig.replace("0x", ""),
+            [CONTRACT_ADDRESS],
+            user,
+            startTs,
+            days,
+          );
+
+          let decrypted = out[encHex];
+          if (typeof decrypted === "bigint") decrypted = Number(decrypted);
+
+          log(`decrypted: ${decrypted}`);
+          log("DONE");
+          status.textContent = "✅ Operation completed";
+          result.textContent = `🎉 Result: ${decrypted} (tx: ${tx.hash})`;
+          addSuccessFlash(result);
+        } catch (e) {
+          status.textContent = `❌ Error: ${e.message}`;
+          log(`Operation error: ${e.message}`);
+          console.error("Operation error:", e);
+        } finally {
+          addBtn.disabled = false;
+          getResultBtn.disabled = false;
+          removeLoadingAnimation(addBtn);
+        }
+      };
+
+      getResultBtn.onclick = async () => {
+        if (!signer || !relayer || !adder) {
+          status.textContent = "❌ Connect MetaMask first";
+          log("MetaMask not connected");
+          return;
+        }
+
+        addBtn.disabled = true;
+        getResultBtn.disabled = true;
+        result.textContent = "";
+        status.textContent = "🔓 Retrieving result...";
+        step = 0;
+
+        addLoadingAnimation(getResultBtn);
+
+        try {
+          log("Retrieving last result...");
+          const encHex = await adder.getLastResult();
+          log(`encSum (getLastResult): ${encHex}`);
+
+          const { generateKeypair } = await import("https://cdn.zama.ai/relayer-sdk-js/0.1.2/relayer-sdk-js.js");
+          const keypair = await generateKeypair();
+          const pairs = [{ handle: encHex, contractAddress: CONTRACT_ADDRESS }];
+
+          const startTs = Math.floor(Date.now() / 1000).toString();
+          const days = "7";
+          const eip712 = relayer.createEIP712(keypair.publicKey, [CONTRACT_ADDRESS], startTs, days);
+
+          log("Creating EIP-712 signature...");
+          const sig = await signer.signTypedData(
+            eip712.domain,
+            { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
+            eip712.message,
+          );
+          log("Signature created");
+
+          const out = await relayer.userDecrypt(
+            pairs,
+            keypair.privateKey,
+            keypair.publicKey,
+            sig.replace("0x", ""),
+            [CONTRACT_ADDRESS],
+            user,
+            startTs,
+            days,
+          );
+
+          let decrypted = out[encHex];
+          if (typeof decrypted === "bigint") decrypted = Number(decrypted);
+
+          log(`decrypted: ${decrypted}`);
+          status.textContent = "✅ Result retrieved";
+          result.textContent = `🎉 Current result: ${decrypted}`;
+          addSuccessFlash(result);
+        } catch (e) {
+          status.textContent = `❌ Error: ${e.message}`;
+          log(`Error retrieving result: ${e.message}`);
+          console.error("Error retrieving result:", e);
+        } finally {
+          addBtn.disabled = false;
+          getResultBtn.disabled = false;
+          removeLoadingAnimation(getResultBtn);
+        }
+      };
+    </script>
+  </body>
+</html>
